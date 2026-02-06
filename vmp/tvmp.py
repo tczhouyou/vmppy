@@ -5,9 +5,14 @@ np.bool = np.bool_
 from typing import List
 import pickle
 
-from .transformations import quaternion_multiply, quaternion_conjugate
-from .trajectory import Trajectories
-from .trajectory import TSTrajectory
+# Allow both package import (recommended) and direct script execution.
+try:
+    from .transformations import quaternion_multiply, quaternion_conjugate
+    from .trajectory import Trajectories
+    from .trajectory import TSTrajectory
+except ImportError:  # pragma: no cover
+    from vmp.transformations import quaternion_multiply, quaternion_conjugate
+    from vmp.trajectory import Trajectories, TSTrajectory
 
 
 import sys

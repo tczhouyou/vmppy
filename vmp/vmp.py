@@ -2,8 +2,13 @@ from copy import deepcopy
 import pickle
 import numpy as np
 from typing import Any, Dict, List, Optional
-from .trajectory import Trajectories, Trajectory
-from .compat import print_instantiation_arguments
+# Allow both package import (recommended) and direct script execution.
+try:
+    from .trajectory import Trajectories, Trajectory
+    from .compat import print_instantiation_arguments
+except ImportError:  # pragma: no cover
+    from vmp.trajectory import Trajectories, Trajectory
+    from vmp.compat import print_instantiation_arguments
 
 import uuid
 
