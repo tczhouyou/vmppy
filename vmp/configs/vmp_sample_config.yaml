@@ -1,0 +1,16 @@
+type: tvmp
+trajectory_file: "xxx"
+canonical_system_config:
+  type: linear
+elementary_trajectory_config:
+  type: linear
+shape_modulation_config:
+  type: krbf
+  num_kernels: 20
+init_runtime_config:
+  goal: []
+  viapoints:
+    - canval: 0.2
+      viapoint: []
+    - canval: 0.3
+      viapoint: []

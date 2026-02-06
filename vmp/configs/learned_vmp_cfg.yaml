@@ -1,0 +1,570 @@
+vmps:
+  - type: "tvmp"
+    name: "p2p_right"
+    dim: 7
+    trajectory_file: "p2p.csv"
+    vmp_file_to_store: "p2p_right_arm.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_minimum_jerk"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 10
+  
+  - type: "tvmp"
+    name: "p2p_left"
+    dim: 7
+    trajectory_file: "p2p.csv"
+    vmp_file_to_store: "p2p_left_arm.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_minimum_jerk"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 10
+
+
+  - type: "tvmp"
+    name: "raise_right_arm"
+    dim: 7
+    trajectory_file: "raise_right_arm.npy"
+    vmp_file_to_store: "raise_right_arm.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    runtime_config:
+      viapoints:
+      - canval: 0.5
+        viapoint: [0.0, -0.5891, -0.2801, 0.7866, -0.1787, -0.5544, -0.2051]
+      - canval: 0.3
+        viapoint: [0.0853, -0.6039, -0.2331, 0.7436, -0.2478, -0.6166, -0.0734]
+    learn_config:
+      extend_ends: 10
+
+
+  - type: "tvmp"
+    name: "raise_left_arm"
+    dim: 7
+    trajectory_file: "raise_left_arm.npy"
+    vmp_file_to_store: "raise_left_arm.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    runtime_config:
+      viapoints:
+        - canval: 0.585
+          viapoint: [-0.01, 0.52, -0.29, 0.82, 0.35, -0.46, -0.02]
+        - canval: 0.45
+          viapoint: [0.03, 0.62, -0.19, 0.72, 0.47, -0.48, 0.20]
+    learn_config:
+      extend_ends: 10
+
+  
+  - type: "tvmp"
+    name: "move_right_arm_from_table"
+    dim: 7
+    trajectory_file: "move_right_arm_from_table.npy"
+    vmp_file_to_store: "move_right_arm_from_table.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    runtime_config:
+      viapoints:
+        - canval: 0.3
+          viapoint: [0.03, -0.62, -0.19, 0.72, -0.47, -0.48, -0.20]
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "move_left_arm_from_table"
+    dim: 7
+    trajectory_file: "move_left_arm_from_table.npy"
+    vmp_file_to_store: "move_left_arm_from_table.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    runtime_config:
+      viapoints:
+        - canval: 0.3
+          viapoint: [0.03, 0.62, -0.19, 0.72, 0.47, -0.48, 0.20]
+    learn_config:
+      extend_ends: 10
+  
+  - type: "vmp"
+    name: "ctrl_hand"
+    dim: 1
+    trajectory_file: "hand.csv"
+    vmp_file_to_store: "ctrl_hand.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "minimum_jerk"
+      dim: 1
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 1
+        num_kernels: 10
+
+  - type: "vmp"
+    name: "ctrl_head"
+    dim: 2
+    trajectory_file: "head.csv"
+    vmp_file_to_store: "ctrl_head.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "minimum_jerk"
+      dim: 2
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 2
+        num_kernels: 20
+
+  - type: "vmp"
+    name: "ctrl_torso"
+    dim: 1
+    trajectory_file: "torso.csv"
+    vmp_file_to_store: "ctrl_torso.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "minimum_jerk"
+      dim: 1
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 1
+        num_kernels: 10
+
+
+# Only for mh2
+  - type: "vmp"
+    name: "jt_p2p_right"
+    dim: 8
+    trajectory_file: "jtp2p.npy"
+    vmp_file_to_store: "jt_p2p_right.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "minimum_jerk"
+      dim: 8
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 8
+        num_kernels: 10
+  
+  - type: "vmp"
+    name: "jt_p2p_left"
+    dim: 8
+    trajectory_file: "jtp2p.npy"
+    vmp_file_to_store: "jt_p2p_left.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "minimum_jerk"
+      dim: 8
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 8
+        num_kernels: 10
+
+  # dw & cw
+  - type: "tvmp"
+    name: "cw_close_washer_2_r"
+    dim: 7
+    trajectory_file: "cw_close_washer_2_r.npy"
+    vmp_file_to_store: "cw_close_washer_2_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "cw_fetch_clothes_r"
+    dim: 7
+    trajectory_file: "cw_fetch_clothes_r.npy"
+    vmp_file_to_store: "cw_fetch_clothes_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "cw_load_washer_r"
+    dim: 7
+    trajectory_file: "cw_load_washer_r.npy"
+    vmp_file_to_store: "cw_load_washer_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "cw_open_washer_a_1_l"
+    dim: 7
+    trajectory_file: "cw_open_washer_a_1_l.npy"
+    vmp_file_to_store: "cw_open_washer_a_1_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "cw_open_washer_a_2_l"
+    dim: 7
+    trajectory_file: "cw_open_washer_a_2_l.npy"
+    vmp_file_to_store: "cw_open_washer_a_2_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "cw_open_washer_b_1_l"
+    dim: 7
+    trajectory_file: "cw_open_washer_b_1_l.npy"
+    vmp_file_to_store: "cw_open_washer_b_1_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_close_r"
+    dim: 7
+    trajectory_file: "dw_close_r.npy"
+    vmp_file_to_store: "dw_close_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_insert_place_bowl_l"
+    dim: 7
+    trajectory_file: "dw_insert_place_bowl_l.npy"
+    vmp_file_to_store: "dw_insert_place_bowl_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_insert_push_bowl_rack_r"
+    dim: 7
+    trajectory_file: "dw_insert_push_bowl_rack_r.npy"
+    vmp_file_to_store: "dw_insert_push_bowl_rack_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_insert_retrieve_bowl_rack_l"
+    dim: 7
+    trajectory_file: "dw_insert_retrieve_bowl_rack_l.npy"
+    vmp_file_to_store: "dw_insert_retrieve_bowl_rack_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_insert_retrieve_bowl_rack_r"
+    dim: 7
+    trajectory_file: "dw_insert_retrieve_bowl_rack_r.npy"
+    vmp_file_to_store: "dw_insert_retrieve_bowl_rack_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_insert_oepn_bowl_rack_r"
+    dim: 7
+    trajectory_file: "dw_insert_oepn_bowl_rack_r.npy"
+    vmp_file_to_store: "dw_insert_oepn_bowl_rack_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_insert_plate_rack_l"
+    dim: 7
+    trajectory_file: "dw_insert_plate_rack_l.npy"
+    vmp_file_to_store: "dw_insert_plate_rack_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_insert_reach_plate_rack_r"
+    dim: 7
+    trajectory_file: "dw_insert_reach_plate_rack_r.npy"
+    vmp_file_to_store: "dw_insert_reach_plate_rack_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_open_drag_handle_r"
+    dim: 7
+    trajectory_file: "dw_open_drag_handle_r.npy"
+    vmp_file_to_store: "dw_open_drag_handle_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_open_fully_arm_r"
+    dim: 7
+    trajectory_file: "dw_open_fully_arm_r.npy"
+    vmp_file_to_store: "dw_open_fully_arm_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_open_grasp_handle_r"
+    dim: 7
+    trajectory_file: "dw_open_grasp_handle_r.npy"
+    vmp_file_to_store: "dw_open_grasp_handle_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_open_retrieve_arm_r"
+    dim: 7
+    trajectory_file: "dw_open_retrieve_arm_r.npy"
+    vmp_file_to_store: "dw_open_retrieve_arm_r.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_pour_bowl_l"
+    dim: 7
+    trajectory_file: "dw_pour_bowl_l.npy"
+    vmp_file_to_store: "dw_pour_bowl_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
+
+  - type: "tvmp"
+    name: "dw_pour_plate_l"
+    dim: 7
+    trajectory_file: "dw_pour_plate_l.npy"
+    vmp_file_to_store: "dw_pour_plate_l.pkl"
+    canonical_system_config:
+      type: "linear_decay"
+    elementary_trajectory_config:
+      type: "task_space_linear"
+      dim: 7
+    shape_modulation_config:
+      type: "krbf"
+      config:
+        dim: 7
+        num_kernels: 30
+    learn_config:
+      extend_ends: 10
