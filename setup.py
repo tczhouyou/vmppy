@@ -9,8 +9,8 @@ setup(
     install_requires=[
         'numpy',
         'pydantic>=2',
-        'torch',
         'omegaconf',
-        'rff',
+        'torch',
+        'random-fourier-features-pytorch'
     ],
 )

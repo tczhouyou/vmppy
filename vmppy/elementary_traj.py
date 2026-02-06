@@ -3,8 +3,8 @@ from typing import Any, Dict, List, Union, Literal
 from pydantic import BaseModel
 import numpy as np
 
-from vmp.data_type import ViaPoint
-from .transformations import quaternion_slerp
+from vmppy.data_type import ViaPoint
+from vmppy.transformations import quaternion_slerp
 
 
 class ElementaryTraj():
@@ -59,7 +59,7 @@ class LinearElementaryTraj(ElementaryTraj):
 
     def at(self, phase: float) -> np.ndarray:
         """Get the point at a specific phase value.
-        
+
         Args:
             phase (float): Phase value
         Returns:
@@ -70,13 +70,13 @@ class LinearElementaryTraj(ElementaryTraj):
         idx = np.searchsorted([-v.can_value for v in self.virtual_viapoints], -phase)
         if idx == 0:
             return self.virtual_viapoints[idx].point
-        
+
         # Linear interpolation
         prev = self.virtual_viapoints[idx - 1]
         next = self.virtual_viapoints[idx]
         alpha = (phase - prev.can_value) / (next.can_value - prev.can_value)
         return prev.point + alpha * (next.point - prev.point)
-            
+
 
 class MinimumJerkElementaryTraj(ElementaryTraj):
     def __init__(self, dim: int) -> None:
@@ -86,7 +86,7 @@ class MinimumJerkElementaryTraj(ElementaryTraj):
         idx = np.searchsorted([-v.can_value for v in self.virtual_viapoints], -phase)
         if idx == 0:
             return self.virtual_viapoints[idx].point
-        
+
         prev = self.virtual_viapoints[idx - 1]
         next = self.virtual_viapoints[idx]
         alpha = (phase - prev.can_value) / (next.can_value - prev.can_value)
@@ -101,7 +101,7 @@ class TaskSpaceLinearElementaryTraj(ElementaryTraj):
 
     def at(self, phase: float) -> np.ndarray:
         """Get the point at a specific phase value.
-        
+
         Args:
             phase (float): Phase value
         Returns:
@@ -112,7 +112,7 @@ class TaskSpaceLinearElementaryTraj(ElementaryTraj):
         idx = np.searchsorted([-v.can_value for v in self.virtual_viapoints], -phase)
         if idx == 0:
             return self.virtual_viapoints[idx].point
-        
+
         # Linear interpolation for position
         prev = self.virtual_viapoints[idx - 1]
         next = self.virtual_viapoints[idx]
@@ -133,7 +133,7 @@ class TaskSpaceMinJerkElementaryTraj(ElementaryTraj):
 
     def at(self, phase: float) -> np.ndarray:
         """Get the point at a specific phase value using minimum jerk for position and slerp for orientation.
-        
+
         Args:
             phase (float): Phase value between 0 and 1.
         Returns:
@@ -144,7 +144,7 @@ class TaskSpaceMinJerkElementaryTraj(ElementaryTraj):
         idx = np.searchsorted([-v.can_value for v in self.virtual_viapoints], -phase)
         if idx == 0:
             return self.virtual_viapoints[idx].point
-        
+
         prev = self.virtual_viapoints[idx - 1]
         next = self.virtual_viapoints[idx]
 

@@ -18,9 +18,9 @@ def _root() -> str:
 
 class VMPPath:
     ROOT = _root()
-    MOTION_LIB_PATH = join(ROOT, "data", "motion_library")
+    MOTION_LIB_PATH = join(ROOT, "data")
     VMP_MOTION_PATH = join(MOTION_LIB_PATH, "vmp_motions")
-    RAW_MOTION_PATH = join(VMP_MOTION_PATH, "raw")
+    RAW_MOTION_PATH = join(MOTION_LIB_PATH, "raw")
 
     @staticmethod
     def get_vmp_motion(vmp_name: str, ext: str = "pkl") -> str:

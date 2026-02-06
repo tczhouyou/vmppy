@@ -9,17 +9,16 @@ import torch.nn as nn
 from torch.utils.data import TensorDataset, DataLoader
 from rff import rff
 from omegaconf import OmegaConf
+from tqdm import trange
 
 
-from .type_utils import check_type
-
-from vmp.data_type import MVN
+from vmppy.type_utils import check_type
+from vmppy.data_type import MVN
+from vmppy.logging_utils import setup_logging
 import logging
 
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
-
+logger = setup_logging("FunctionApproximator")
 
 
 class BaseConfig(BaseModel):
@@ -82,7 +81,7 @@ class FunctionApproximator(nn.Module):
 
 
 class HashMapping(FunctionApproximator):
-    def __init__(self, dim: int) -> None:
+    def __init__(self, dim: int, **kwargs) -> None:
         """
         Args:
             in_dim (int): Input dimension (will be always 1 in this case)
@@ -93,14 +92,14 @@ class HashMapping(FunctionApproximator):
         self.x_values = []  # To store the x values for interpolation
 
     def _hash(self, x: float) -> int:
-        return float(x) 
+        return float(x)
 
     def __call__(self, phase: Union[float, np.ndarray]) -> np.ndarray:
         """Retrieve or interpolate value based on the input.
-        
+
         Args:
             phase (Union[float, np.ndarray]): Input value
-        
+
         Returns:
             np.ndarray: The interpolated or exact value
         """
@@ -110,26 +109,26 @@ class HashMapping(FunctionApproximator):
 
     def _get_value(self, x: float) -> np.ndarray:
         """Retrieve the value for a given input x, with interpolation if necessary.
-        
+
         Args:
             x (float): Input value
-            
+
         Returns:
             np.ndarray: Interpolated or exact value from the hash table
         """
         if x in self.x_values:
             hash_key = self._hash(x)
             return self.hash_table[hash_key]
-        
+
         # Interpolate if x is not in the hash table
         return self._interpolate(x)
 
     def _interpolate(self, x: float) -> np.ndarray:
         """Interpolate between two nearest x-values to get the value for x.
-        
+
         Args:
             x (float): Input value
-        
+
         Returns:
             np.ndarray: Interpolated output
         """
@@ -151,7 +150,7 @@ class HashMapping(FunctionApproximator):
 
     def learn(self, x: np.ndarray, y: np.ndarray) -> None:
         """Populate the hash table with key-value pairs from the training data.
-        
+
         Args:
             x (np.ndarray): Input data, shape (num_demos, num_samples, 1)
             y (np.ndarray): Output data, shape (num_demos, num_samples, dim)
@@ -179,7 +178,7 @@ class HashMapping(FunctionApproximator):
 
 class KRBF(FunctionApproximator):
     def __init__(
-        self, 
+        self,
         dim: int,
         in_dim: int = 1,
         num_kernels: int = 10,
@@ -188,7 +187,7 @@ class KRBF(FunctionApproximator):
         return_type: str = 'point'
     ) -> None:
         """Kernelized Radial Basis Function (KRBF) for function approximation.
-        
+
         Args:
             dim (int): Dimension of the function
             num_kernels (int, optional): Number of kernels. Defaults to 10.
@@ -217,7 +216,7 @@ class KRBF(FunctionApproximator):
 
     def __psi__(self, can_value: Union[float, np.ndarray]) -> np.ndarray:
         """Get kernel evaluation.
-        
+
         Args:
             can_value (Union[float, np.ndarray]): Canonical system value
                 it can be (num_samples,) or (num_samples, 1)
@@ -239,7 +238,7 @@ class KRBF(FunctionApproximator):
 
     def __Psi__(self, can_value: Union[float, np.ndarray]) -> np.ndarray:
         """Get kernel evaluation.
-        
+
         Args:
             can_value (Union[float, np.ndarray]): Canonical system value
                 it can be (num_samples,) or (num_samples, 1)
@@ -257,7 +256,7 @@ class KRBF(FunctionApproximator):
     def __call__(self, phase: Union[float, np.ndarray]) -> np.ndarray:
         Psi = self.__Psi__(phase)
         traj_mean = Psi @ self.weights.center
-        
+
         cov = self.weights.cov
         if cov.ndim == 0:
             traj_cov = np.diag(np.ones_like(traj_mean) * cov)
@@ -285,7 +284,7 @@ class KRBF(FunctionApproximator):
         assert y.ndim == 3, "y should be a 3D array, (num_demos, num_samples, dim)"
         assert x.shape[0] == y.shape[0], "Number of demos should be the same"
         assert x.shape[1] == y.shape[1], "Number of samples for each demo should be the same"
-        
+
         num_demos = x.shape[0]
         weights = []
         for i in range(num_demos):
@@ -302,7 +301,7 @@ class KRBF(FunctionApproximator):
 
     def save_learned_weights_to_csv(self, path: str) -> None:
         np.savetxt(path, self.learned_weights.center.reshape(1,-1), delimiter=",")
-    
+
 
 def get_activation(activation: str):
     if activation == 'relu':
@@ -313,7 +312,7 @@ def get_activation(activation: str):
         return torch.nn.Sigmoid()
     else:
         raise ValueError("Invalid activation function")
-    
+
 def get_optimizer(parameters: torch.Tensor, optimizer: str, learning_rate: float):
     if optimizer == 'adam':
         return torch.optim.Adam(parameters, lr=learning_rate, weight_decay=1e-5)
@@ -325,10 +324,10 @@ def get_optimizer(parameters: torch.Tensor, optimizer: str, learning_rate: float
 
 class FixedBoundaryFCNN(FunctionApproximator):
     def __init__(
-        self, 
-        dim: int, 
-        in_dim: int = 1, 
-        hidden_sizes: List[float] = [64, 64], 
+        self,
+        dim: int,
+        in_dim: int = 1,
+        hidden_sizes: List[float] = [64, 64],
         activations: Union[List[str], str] = 'relu',
         optimizer: str = "adam",
         learning_rate: float = 1e-3,
@@ -378,6 +377,7 @@ class FixedBoundaryFCNN(FunctionApproximator):
         self.device = torch.device(device)
         self.model.to(self.device)
 
+        self.logger = setup_logging("FixedBoundaryFCNN")
         self.boundary_start = boundary_start
         self.boundary_end = boundary_end
 
@@ -396,7 +396,7 @@ class FixedBoundaryFCNN(FunctionApproximator):
         # phase variable goes from 1 to 0
         y = x * boundary_start + (1 - x) * boundary_end + y * x * (1-x)
         return y
-    
+
     def _initialize_weights(self):
         """Initialize weights of the model using Xavier (Glorot) uniform initialization."""
         for layer in self.model:
@@ -419,7 +419,8 @@ class FixedBoundaryFCNN(FunctionApproximator):
         dataset = TensorDataset(x_tensor, y_tensor)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
-        for epoch in range(self.train_epoch):
+        epoch_bar = trange(self.train_epoch, desc="Training")
+        for epoch in epoch_bar:
             total_loss = 0
             for batch_x, batch_y in dataloader:
                 self.optimizer.zero_grad()
@@ -428,20 +429,21 @@ class FixedBoundaryFCNN(FunctionApproximator):
                 loss.backward()
                 self.optimizer.step()
                 total_loss += loss.item()
-            
+
             avg_loss = total_loss / len(dataloader)
+            epoch_bar.set_postfix(avg_loss=f"{avg_loss:.6f}")
             if avg_loss < self.stop_threshold:
-                print(f"Training stopped at epoch {epoch} with average loss {avg_loss}")
+                epoch_bar.write(
+                    f"Training stopped at epoch {epoch}, avg_loss={avg_loss:.6f}"
+                )
                 break
-            if epoch % 10 == 0:
-                print(f"Epoch {epoch}, Loss: {avg_loss}")
 
     def __call__(self, phase: Union[float, np.ndarray]) -> np.ndarray:
         if np.ndim(phase) == 0:
             phase = np.array([[phase]]) # (1, 1)
         elif np.ndim(phase) == 1:
             phase = phase[..., np.newaxis] # (n, 1)
-        
+
         phase_tensor = torch.tensor(phase, dtype=torch.float32).to(self.device)
         with torch.no_grad():
             output = self.model(phase_tensor).cpu().numpy()
@@ -454,11 +456,11 @@ class FixedBoundaryFCNN(FunctionApproximator):
 
 class FixedBoundaryGRU(FunctionApproximator):
     def __init__(
-        self, 
-        dim: int, 
+        self,
+        dim: int,
         in_dim: int = 1,
-        hidden_size: int=128, 
-        num_layers: int=2, 
+        hidden_size: int=128,
+        num_layers: int=2,
         optimizer: str = "adam",
         learning_rate: float = 1e-3,
         train_epoch: int = 100,
@@ -470,7 +472,7 @@ class FixedBoundaryGRU(FunctionApproximator):
         device='cuda' if torch.cuda.is_available() else 'cpu'
     ):
         super().__init__(in_dim, dim)
-        
+
         # Store boundary values
         self.boundary_start = boundary_start
         self.boundary_end = boundary_end
@@ -501,25 +503,25 @@ class FixedBoundaryGRU(FunctionApproximator):
 
     def create_subsequences(self, x: np.ndarray, y: np.ndarray, subseq_len: int, step=1):
         """Split a long sequence into subsequences with a fixed length.
-        
+
         Args:
             x (np.ndarray): Original sequence of shape (num_demos, num_samples, in_dim).
             y (np.ndarray): : Original sequence of shape (num_demos, num_samples, in_dim).
             subseq_len (int): Length of each subsequence (window size).
             step (int, optional): Step size for the sliding window. Defaults to 1.
-        
+
         Returns:
             Tuple[np.ndarray, np.ndarray]: Tuple containing subsequences and corresponding targets.
         """
         subsequences = []
         targets = []
-        
+
         for i in range(0, x.shape[1] - subseq_len + 1, step):
             subseq = x[:, i:i + subseq_len]
             subsequences.append(subseq)
             target = y[:, i:i + subseq_len]
             targets.append(target)
-        
+
         subsequences = np.stack(subsequences, axis=1) # (num_demos, num_subseq, subseq_len, in_dim)
         targets = np.stack(targets, axis=1) # (num_demos, num_subseq, subseq_len, in_dim)
         return subsequences, targets
@@ -529,10 +531,10 @@ class FixedBoundaryGRU(FunctionApproximator):
         embed = self.init_layer(x)
         gru_out, hidden_state = self.gru(embed, hidden_state)  # Shape: (batch_size, seq_len, hidden_size)
         output = self.fc(gru_out)  # Shape: (batch_size, seq_len, dim)
-        
+
         boundary_start = torch.tensor(self.boundary_start, dtype=torch.float32).to(self.device).unsqueeze(0).unsqueeze(0)
         boundary_end = torch.tensor(self.boundary_end, dtype=torch.float32).to(self.device).unsqueeze(0).unsqueeze(0)
-        
+
         # Apply fixed boundary conditions
         output = x * boundary_start + (1 - x) * boundary_end + output * x * (1-x)
         return output, hidden_state
@@ -548,7 +550,7 @@ class FixedBoundaryGRU(FunctionApproximator):
         """
         # Convert to tensor if numpy array is provided
         num_samples = x.shape[1]
-        if num_samples / self.subseq_len < 1: 
+        if num_samples / self.subseq_len < 1:
             raise ValueError(
                 f"The number of trajectory samples {num_samples} should be greater than subsequence length {self.subseq_len}"
             )
@@ -559,29 +561,40 @@ class FixedBoundaryGRU(FunctionApproximator):
 
         x_tensor = torch.tensor(x, dtype=torch.float32).to(self.device)
         y_tensor = torch.tensor(y, dtype=torch.float32).to(self.device)
-        
+
         self.train()
         dataset = TensorDataset(x_tensor, y_tensor)
         dataloader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
         # Training loop
         loss = 0
-        for epoch in range(self.train_epoch):
+        epoch_bar = trange(self.train_epoch, desc="Training", dynamic_ncols=True)
+
+        for epoch in epoch_bar:
             total_loss = 0
+
             for batch_x, batch_y in dataloader:
                 self.optimizer.zero_grad()
+
                 predictions, _ = self.forward(batch_x)
                 loss = self.loss_fn(predictions, batch_y)
+
                 loss.backward()
                 self.optimizer.step()
+
                 total_loss += loss.item()
-      
+
             avg_loss = total_loss / len(dataloader)
+
+            # update tqdm progress bar
+            epoch_bar.set_postfix(avg_loss=f"{avg_loss:.6f}")
+
+            # early stopping
             if avg_loss < self.stop_threshold:
-                print(f"Training stopped at epoch {epoch} with average loss {avg_loss}")
+                epoch_bar.write(
+                    f"Training stopped at epoch {epoch} with average loss {avg_loss:.6f}"
+                )
                 break
-            if epoch % 10 == 0:
-                print(f"Epoch {epoch}, Loss: {avg_loss}")
 
     def __call__(self, phase: Union[float, np.ndarray]) -> np.ndarray:
         """Inference method to pass data through the model."""
@@ -590,7 +603,7 @@ class FixedBoundaryGRU(FunctionApproximator):
             phase = np.array([[phase]]) # (1, 1)
         else:
             phase = phase[..., np.newaxis] # (n, 1)
-        
+
         # Get batch size
         phase = torch.tensor(phase, dtype=torch.float32).to(self.device).unsqueeze(0) # (1, 1|n, 1)
         with torch.no_grad():
@@ -602,13 +615,13 @@ class FixedBoundaryGRU(FunctionApproximator):
 
 class FunctionApproximatorConfig(BaseModel):
     type: Literal["krbf", "fbfcnn", "fbgru", "hash"] = "krbf"
-    config: Union[KRBFConfig, FixedBoundaryFCNNConfig, FixedBoundaryGRUConfig, HashMappingConfig] = KRBFConfig(dim=1)
+    config: Union[KRBFConfig, FixedBoundaryFCNNConfig, FixedBoundaryGRUConfig, HashMappingConfig, Dict[str, Any]] = KRBFConfig(dim=1)
 
     @model_validator(mode="before")
     def set_shape_modulation_config(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         if not isinstance(data, dict):
             data = OmegaConf.to_container(data)
-    
+
         values = data if isinstance(data, dict) else {}
         config_type = values.get("type", "krbf")
 
@@ -630,7 +643,7 @@ class FunctionApproximatorConfig(BaseModel):
             raise ValueError(f"Unsupported type {config_type}")
         return values
 
-        
+
 class FunctionApproximatorFactory():
     @staticmethod
     def get_function_approximator(config: FunctionApproximatorConfig) -> FunctionApproximator:

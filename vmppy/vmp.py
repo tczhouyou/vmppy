@@ -7,8 +7,8 @@ try:
     from .trajectory import Trajectories, Trajectory
     from .compat import print_instantiation_arguments
 except ImportError:  # pragma: no cover
-    from vmp.trajectory import Trajectories, Trajectory
-    from vmp.compat import print_instantiation_arguments
+    from vmppy.trajectory import Trajectories, Trajectory
+    from vmppy.compat import print_instantiation_arguments
 
 import uuid
 
@@ -19,10 +19,10 @@ sys.path.append(os.path.abspath(os.path.join(file_path, "../../")))
 sys.path.append(os.path.abspath(os.path.join(file_path, "..")))
 sys.path.append(os.path.abspath(file_path))
 
-from vmp.data_type import ViaPoint, MVN
-from vmp.canonical_system import CanonicalSystemFactory, CanonicalSystemConfig
-from vmp.elementary_traj import ElementaryTrajectoryFactory, ElementaryTrajConfig
-from vmp.function_approximator import FunctionApproximatorFactory, FunctionApproximatorConfig
+from vmppy.data_type import ViaPoint, MVN
+from vmppy.canonical_system import CanonicalSystemFactory, CanonicalSystemConfig
+from vmppy.elementary_traj import ElementaryTrajectoryFactory, ElementaryTrajConfig
+from vmppy.function_approximator import FunctionApproximatorFactory, FunctionApproximatorConfig
 
 import logging
 
@@ -39,7 +39,7 @@ class VMP():
         canonical_system_config: CanonicalSystemConfig = CanonicalSystemConfig(),
         **kwargs
     ) -> None:
-        
+
         self.id = uuid.uuid4()
         if name == "unknown":
             self.name = f"VMP_{self.id}"
@@ -65,11 +65,11 @@ class VMP():
         print_instantiation_arguments(type(self.shape_modulation),  self.config)
         print_instantiation_arguments(type(self.elementary_traj),  self.config)
         return msg
-    
+
     @property
     def goal(self):
         return self.get_goal()
-    
+
     @property
     def start(self):
         return self.get_start()
@@ -78,10 +78,10 @@ class VMP():
     @property
     def vmp_type(self):
         return "vmp"
-    
+
     def set_tags(self, tags: Dict[str, Any]) -> None:
         self.tags = tags
-    
+
     def check_viapoints(self, viapoints: Optional[List[ViaPoint]] = None) -> bool:
         if viapoints is None:
             viapoints = self.viapoints
@@ -109,22 +109,22 @@ class VMP():
                 virtual_viapoints.append(ViaPoint(viapoint.can_value, hvia))
 
         return virtual_viapoints
-    
+
     def compose(self, fpart: np.ndarray, hpart: np.ndarray) -> np.ndarray:
         return hpart + fpart #res.reshape(-1, self.dim, order="F")
-    
+
     def decompose(self, traj: np.ndarray, hpart: np.ndarray) -> np.ndarray:
         return traj - hpart
-    
+
     def at(self, timestamp: float) -> np.ndarray:
         """Get the point at a specific phase value.
-        
+
         Args:
             timestamp (float): timestamp value
         Returns:
             np.ndarray: Point at the phase value (dim,)
         """
-        
+
         can_value = self.canonical_system.at(timestamp)
         fpart = self.shape_modulation(can_value)
         hpart = self.elementary_traj.at(can_value)
@@ -132,7 +132,7 @@ class VMP():
 
     def rollout(self, num_samples, is_deterministic=True, viapoints: Optional[List[ViaPoint]]=None) -> np.ndarray:
         """Get the points at specific phase values.
-        
+
         Args:
             can_values (Union[np.ndarray, List[float]]): Phase values
                 it can be (num_samples,) or (num_samples, 1)
@@ -170,14 +170,14 @@ class VMP():
         Args:
             trajectories (Trajectories): Demonstrations
         """
-        
+
         trajectories.normalize_timestamps(num_samples)
         if smooth_window_length_ratio * num_samples  > 1:
             window_length = int(num_samples * smooth_window_length_ratio) # this should be an odd number
             if window_length % 2 == 0:
                 window_length += 1
             trajectories.smooth(window_length=window_length)
-    
+
         can_value = self.canonical_system.rollout(num_samples)
         can_values = [can_value] * len(trajectories)
         ftargets = []
@@ -194,12 +194,12 @@ class VMP():
         can_values = np.array(can_values) # (num_demos, num_samples, )
         can_values = np.expand_dims(can_values, axis=-1) # (num_demos, num_samples, 1)
         ftargets = np.array(ftargets) # (num_demos, num_samples, dim)
-        self.shape_modulation.learn(can_values, ftargets)       
+        self.shape_modulation.learn(can_values, ftargets)
         self.viapoints = deepcopy(self.learned_viapoints)
 
     def insert_viapoint(self, viapoint: ViaPoint) -> None:
         """Insert a virtual viapoint.
-        
+
         Args:
             viapoint (ViaPoint): Virtual viapoint
         """
@@ -213,7 +213,7 @@ class VMP():
 
     def insert_viapoints(self, viapoints: List[ViaPoint]) -> None:
         """Insert a virtual viapoint.
-        
+
         Args:
             viapoints (List[ViaPoint]): Virtual viapoints
         """
@@ -257,18 +257,18 @@ class VMP():
     def deserialize(clc, path: str):
         with open(path, 'rb') as f:
             return pickle.load(f)
-        
+
     def set_start(self, start: np.ndarray) -> None:
         for viapoint in self.viapoints:
             if viapoint.can_value == 1.0:
                 self.viapoints.remove(viapoint)
-        
+
         self.insert_viapoint(ViaPoint(1.0, start))
 
     def set_goal(self, goal: np.ndarray) -> None:
         if goal.shape[-1] != self.dim:
             return
-        
+
         for viapoint in self.viapoints:
             if viapoint.can_value == 0.0:
                 self.viapoints.remove(viapoint)
@@ -284,9 +284,9 @@ class VMP():
         self.elementary_traj.learn(virtual_viapoints)
 
     def learn_from_files(
-        self, 
-        files: List[str], 
-        compress_ratio: float = 1.0, 
+        self,
+        files: List[str],
+        compress_ratio: float = 1.0,
         num_samples: Optional[int] = None,
         smooth_window_length_ratio: float = 0.0,
         extend_ends: int = 0
@@ -304,26 +304,29 @@ class VMP():
         self.learn(trajectories, num_samples, smooth_window_length_ratio)
 
     def learn_from_file(
-        self, 
-        file: str, 
-        compress_ratio: float = 1.0, 
+        self,
+        file: str,
+        compress_ratio: float = 1.0,
         num_samples: Optional[int] = None
     ) -> None:
         self.learn_from_files([file], compress_ratio, num_samples)
 
-    
+
     def get_goal(self) -> np.ndarray:
         for viapoint in self.viapoints:
             if viapoint.can_value == 0.0:
                 return viapoint.point
-            
+
     def get_start(self) -> np.ndarray:
         for viapoint in self.viapoints:
             if viapoint.can_value == 1.0:
                 return viapoint.point
-    
+
 
 if __name__ == "__main__":
+    from vmppy.function_approximator import KRBFConfig
+    import matplotlib.pyplot as plt
+
     timestamps = np.linspace(0, 1, 1000)
     noise_scale = 0.01
 
@@ -332,28 +335,21 @@ if __name__ == "__main__":
     data[:,1] = np.cos(timestamps * 2 * np.pi) + timestamps + noise_scale * (np.random.random(timestamps.shape) - 0.5)
     traj0 = Trajectory(data, timestamps)
 
-    data = np.zeros((1000, 2))
-    data[:,0] = np.sin(timestamps * 2 * np.pi) + timestamps + noise_scale * (np.random.random(timestamps.shape) - 0.5)
-    data[:,1] = np.cos(timestamps * 2 * np.pi) + timestamps + noise_scale * (np.random.random(timestamps.shape) - 0.5)
-    traj1 = Trajectory(data, timestamps)
+    trajectories = Trajectories([traj0])
 
-    trajectories = Trajectories([traj0])#, traj1])
-    
-    # vmp = VMP(
-    #     dim=2, 
-    #     shape_modulation_type='fbfcnn', 
-    #     train_epoch=200, 
-    #     hidden_sizes=[64,64], 
-    #     device="cuda"
-    # )
-
-    vmp = VMP(dim=2, shape_modulation_type="hash")
+    vmp = VMP(
+        dim=2,
+        shape_modulation_config=FunctionApproximatorConfig(
+            type="krbf",
+            config=KRBFConfig(dim=2)
+        )
+    )
 
     vmp.learn(trajectories, num_samples=100)
     vmp.insert_viapoint(
         ViaPoint(
             0.5,
-            np.array([0.0, 0.0])
+            np.array([0.1, 0.0])
         )
     )
 
@@ -361,9 +357,10 @@ if __name__ == "__main__":
 
     vmp1 = VMP.deserialize("vmp_learned.pkl")
     test_traj = vmp1.rollout(100)
-    import matplotlib.pyplot as plt
-    traj0.plot()
-    traj1.plot()
-    plt.plot(traj0.timestamps, test_traj)
+    traj0.plot(name="original")
+    plt.plot(traj0.timestamps, test_traj[:,0], label="rollout-dim-0")
+    plt.plot(traj0.timestamps, test_traj[:,1], label="rollout-dim-1")
+    plt.plot(0.5, 0.1, "go")
     plt.plot(0.5, 0.0, "ro")
-    plt.show()
+    plt.legend()
+    plt.savefig("vmp_test.png")

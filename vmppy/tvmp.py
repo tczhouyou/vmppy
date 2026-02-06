@@ -9,10 +9,11 @@ import pickle
 try:
     from .transformations import quaternion_multiply, quaternion_conjugate
     from .trajectory import Trajectories
-    from .trajectory import TSTrajectory
+    from .tstrajectory import TSTrajectory
 except ImportError:  # pragma: no cover
-    from vmp.transformations import quaternion_multiply, quaternion_conjugate
-    from vmp.trajectory import Trajectories, TSTrajectory
+    from vmppy.transformations import quaternion_multiply, quaternion_conjugate
+    from vmppy.trajectory import Trajectories
+    from vmppy.tstrajectory import TSTrajectory
 
 
 import sys
@@ -22,11 +23,11 @@ sys.path.append(os.path.abspath(os.path.join(file_path, "..")))
 sys.path.append(os.path.abspath(file_path))
 
 
-from vmp.data_type import ViaPose
-from vmp.vmp import VMP
-from vmp.canonical_system import CanonicalSystemConfig
-from vmp.elementary_traj import ElementaryTrajConfig
-from vmp.function_approximator import FunctionApproximatorConfig
+from vmppy.data_type import ViaPose
+from vmppy.vmp import VMP
+from vmppy.canonical_system import CanonicalSystemConfig
+from vmppy.elementary_traj import ElementaryTrajConfig
+from vmppy.function_approximator import FunctionApproximatorConfig
 
 
 class TVMP(VMP):
@@ -42,9 +43,9 @@ class TVMP(VMP):
 
         if hasattr(shape_modulation_config.config, "boundary_end"):
             shape_modulation_config.config.boundary_end = np.array([0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0])
-        
+
         super().__init__(
-            dim=7, 
+            dim=7,
             shape_modulation_config=shape_modulation_config,
             elementary_traj_config=elementary_traj_config,
             canonical_system_config=canonical_system_config,
@@ -65,7 +66,7 @@ class TVMP(VMP):
                 virtual_viapoints.append(viapoint)
             else:
                 fvia = self.shape_modulation(viapoint.can_value).squeeze(0)
-                
+
                 # Calculate the virtual viapoint position
                 hposi = viapoint.point[:3] - fvia[:3]
 
@@ -122,101 +123,80 @@ class TVMP(VMP):
     def deserialize(clc, path: str):
         with open(path, 'rb') as f:
             return pickle.load(f)
-        
+
 
 def test_vmp_shape_modulation():
+    from vmppy.paths import VMPPath
     import matplotlib.pyplot as plt
-    import copy
-    # file ="/home/unix_ai/unix_manipulation_project/data/motion_library/hand_writing/clean_pen.npy"
-    file = "/home/unix_ai/unix_manipulation_project/data/motion_library/hand_writing/raise_arm_final.npy"
-    data = np.load(file)[:,7:]
+
+    file = VMPPath.get_raw_motion("pickplace7d", ext="csv")
+    data = np.loadtxt(file, delimiter=",")
     fig, axes = plt.subplots(1, 3, figsize=(10, 5))
+    traj = TSTrajectory(data[:, 1:], data[:, 0])
 
-    traj = TSTrajectory(data)
-    traj2 = copy.deepcopy(traj)
-    # traj.shrink(0.5, dims=[0,1])
-    tvmp = TVMP(shape_modulation_type="krbf", num_kernels=50)
+    tvmp = TVMP(
+        shape_modulation_config=FunctionApproximatorConfig(type="krbf", config=dict(dim=7, num_kernels=30)),
+        elementary_traj_config=ElementaryTrajConfig(type="task_space_linear", dim=7),
+        canonical_system_config=CanonicalSystemConfig(type="linear"),
+    )
     tvmp.learn(Trajectories([traj]), num_samples=1000)
-    
-    # tvmp2 = TVMP(shape_modulation_type="fbfcnn", train_epochs=100, stop_threshold=1e-6, hidden_sizes=[256, 256, 256], batch_size=128)
-    # tvmp2 = TVMP(
-    #     shape_modulation_type="fbgru", 
-    #     train_epochs=200, 
-    #     stop_threshold=1e-6, 
-    #     hidden_size=256, 
-    #     num_layers=2, 
-    #     batch_size=256,
-    #     subseq_len=200,
-    # )
-    tvmp2 = TVMP(shape_modulation_type="hash", table_size=10000)
-    tvmp2.learn(Trajectories([traj2]), num_samples=10000)
+    tvmp.serialize(VMPPath.get_vmp_motion("pickplace7d", ext="pkl"))
 
-    traja = tvmp.rollout(1000)
-    trajb = tvmp2.rollout(1000)
+    trajo = tvmp.rollout(1000)
 
-    axes[0].plot(traj[:,0], 'r-')
-    axes[0].plot(traj[:,1], 'b-')
-    axes[0].plot(traj[:,2], 'g-')
-    axes[0].plot(traja[:,0], 'r-.')
-    axes[0].plot(traja[:,1], 'b-.')
-    axes[0].plot(traja[:,2], 'g-.')
-    axes[0].plot(trajb[:,0], 'r--')
-    axes[0].plot(trajb[:,1], 'b--')
-    axes[0].plot(trajb[:,2], 'g--')
+    axes[0].plot(traj[:,0], 'r-', label="original-x")
+    axes[0].plot(traj[:,1], 'b-', label="original-y")
+    axes[0].plot(traj[:,2], 'g-', label="original-z")
+    axes[0].plot(trajo[:,0], 'r--', label="tvmp-x")
+    axes[0].plot(trajo[:,1], 'b--', label="tvmp-y")
+    axes[0].plot(trajo[:,2], 'g--', label="tvmp-z")
 
-    axes[1].plot(traj[:,3], 'r-')
-    axes[1].plot(traj[:,4], 'b-')
-    axes[1].plot(traj[:,5], 'g-')
-    axes[1].plot(traj[:,6], 'y-')
-    axes[1].plot(traja[:,3], 'r-.')
-    axes[1].plot(traja[:,4], 'b-.')
-    axes[1].plot(traja[:,5], 'g-.')
-    axes[1].plot(traja[:,6], 'y-.')
-    axes[1].plot(trajb[:,3], 'r--')
-    axes[1].plot(trajb[:,4], 'b--')
-    axes[1].plot(trajb[:,5], 'g--')
-    axes[1].plot(trajb[:,6], 'y--')
-
+    axes[1].plot(traj[:,3], 'r-', label="original-qw")
+    axes[1].plot(traj[:,4], 'b-', label="original-qx")
+    axes[1].plot(traj[:,5], 'g-', label="original-qy")
+    axes[1].plot(traj[:,6], 'y-', label="original-qz")
+    axes[1].plot(trajo[:,3], 'r--', label="tvmp-qw")
+    axes[1].plot(trajo[:,4], 'b--', label="tvmp-qx")
+    axes[1].plot(trajo[:,5], 'g--', label="tvmp-qy")
+    axes[1].plot(trajo[:,6], 'y--', label="tvmp-qz")
 
     axes[2].plot(-traj[:,1], traj[:,0], 'r-')
-    axes[2].plot(-traja[:,1], traja[:,0], 'b-')
-    axes[2].plot(-trajb[:,1], trajb[:,0], 'g-')
-    # axes[2].plot(-traj2[:,1], traj2[:,0], 'g.')
-    plt.show()
+    axes[2].plot(-trajo[:,1], trajo[:,0], 'g-')
+
+    axes[0].legend()
+    axes[1].legend()
+    plt.savefig("tvmp_shape_modulation_test.png")
 
 
 def test_load_vmp():
     import matplotlib.pyplot as plt
-    from .paths import VMPPath
+    from vmppy.paths import VMPPath
     import os
 
-    vmp = TVMP.deserialize(os.path.join(VMPPath.VMP_MOTION_PATH, "raise_right_arm.pkl"))
-    orig_traj = TSTrajectory.from_file("/home/unix_ai/unix_manipulation_project/data/motion_library/common/raise_right_arm.npy")
+    vmp = TVMP.deserialize(VMPPath.get_vmp_motion("pickplace7d", ext="pkl"))
+    orig_traj = TSTrajectory.from_file(VMPPath.get_raw_motion("pickplace7d", ext="csv"), contain_timestamps=True)
     orig_traj.normalize_timestamps(1000)
     traj = vmp.rollout(1000)
-    print(vmp.viapoints)
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    axes[0].plot(orig_traj[:,0], 'r-')
-    axes[0].plot(orig_traj[:,1], 'b-')
-    axes[0].plot(orig_traj[:,2], 'g-')
-    axes[0].plot(traj[:,0], 'r-.')
-    axes[0].plot(traj[:,1], 'b-.')
-    axes[0].plot(traj[:,2], 'g-.')
+    axes[0].plot(orig_traj[:,0], 'r-', label="original-x")
+    axes[0].plot(orig_traj[:,1], 'b-', label="original-y")
+    axes[0].plot(orig_traj[:,2], 'g-', label="original-z")
+    axes[0].plot(traj[:,0], 'r-.', label="rollout-x")
+    axes[0].plot(traj[:,1], 'b-.', label="rollout-y")
+    axes[0].plot(traj[:,2], 'g-.', label="rollout-z")
 
-    axes[1].plot(orig_traj[:,3], 'r-')
-    axes[1].plot(orig_traj[:,4], 'b-')
-    axes[1].plot(orig_traj[:,5], 'g-')
-    axes[1].plot(orig_traj[:,6], 'y-')
-    axes[1].plot(traj[:,3], 'r-.')
-    axes[1].plot(traj[:,4], 'b-.')
-    axes[1].plot(traj[:,5], 'g-.')
-    axes[1].plot(traj[:,6], 'y-')
-    plt.show()
+    axes[1].plot(orig_traj[:,3], 'r-', label="original-qw")
+    axes[1].plot(orig_traj[:,4], 'b-', label="original-qx")
+    axes[1].plot(orig_traj[:,5], 'g-', label="original-qy")
+    axes[1].plot(orig_traj[:,6], 'y-', label="original-qz")
+    axes[1].plot(traj[:,3], 'r-.', label="rollout-qw")
+    axes[1].plot(traj[:,4], 'b-.', label="rollout-qx")
+    axes[1].plot(traj[:,5], 'g-.', label="rollout-qy")
+    axes[1].plot(traj[:,6], 'y-.', label="rollout-qz")
+    plt.savefig("tvmp_load_vmp_test.png")
 
 
 if __name__ == "__main__":
-    # test()
-
+    test_vmp_shape_modulation()
     test_load_vmp()
-    

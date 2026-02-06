@@ -1,7 +1,7 @@
 import numpy as np
 from argparse import ArgumentParser
-from vmp.vmp import VMP
-from vmp.tvmp import TVMP
+from vmppy.vmp import VMP
+from vmppy.tvmp import TVMP
 from matplotlib import pyplot as plt
 
 parser = ArgumentParser("VMP Learner")
